@@ -48,6 +48,9 @@ class Kernel
             PDO::class                        => factory(function () {
                 static $pdo = null;
                 if ($pdo === null) {
+                    $dbPath = $_ENV['DB_PATH'] ?? 'not set';
+                    error_log("DEBUG: Connecting to SQLite DB at path: $dbPath");
+
                     $pdo = new PDO('sqlite:'.$_ENV['DB_PATH']);
                     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);

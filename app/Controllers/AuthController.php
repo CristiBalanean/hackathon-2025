@@ -30,7 +30,23 @@ class AuthController extends BaseController
 
     public function register(Request $request, Response $response): Response
     {
-        // TODO: call corresponding service to perform user registration
+        $data = (array)$request->getParsedBody();
+        $username = $data['username'] ?? '';
+        $password = $data['password'] ?? '';
+
+        try {
+            $this->authService->register($username, $password);
+            $this->logger->info("User registered: {$username}");
+        } catch (\Exception $e) {
+            $errorMessage = $e->getMessage() === 'Username already taken'
+                ? 'Username already taken'
+                : 'An error occurred during registration. Please try again.';
+
+            return $this->render($response, 'auth/register.twig', [
+                'error' => $errorMessage,
+                'username' => $username,
+            ]);
+        }
 
         return $response->withHeader('Location', '/login')->withStatus(302);
     }
@@ -44,12 +60,24 @@ class AuthController extends BaseController
     {
         // TODO: call corresponding service to perform user login, handle login failures
 
-        return $response->withHeader('Location', '/')->withStatus(302);
+        $data = (array)$request->getParsedBody();
+        $username = $data['username'] ?? '';
+        $password = $data['password'] ?? '';
+
+        if($this->authService->attempt($username, $password))
+        {
+            return $response->withHeader('Location', '/')->withStatus(302);
+        }
+
+        return $this->render($response, 'auth/login.twig', ['error' => 'Invalid username or password']);
     }
 
     public function logout(Request $request, Response $response): Response
     {
         // TODO: handle logout by clearing session data and destroying session
+
+        session_unset();
+        session_destroy();
 
         return $response->withHeader('Location', '/login')->withStatus(302);
     }
