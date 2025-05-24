@@ -34,16 +34,35 @@ class AuthController extends BaseController
         $username = $data['username'] ?? '';
         $password = $data['password'] ?? '';
 
+        // Validate inputs first (add your length and pattern checks here)
+        $errors = [];
+
+        if (strlen($username) < 4) {
+            $errors['username'] = 'Username must be at least 4 characters';
+        }
+        if (strlen($password) < 8 || !preg_match('/\d/', $password)) {
+            $errors['password'] = 'Password must be at least 8 characters and contain at least 1 number';
+        }
+
+        if (!empty($errors)) {
+            return $this->render($response, 'auth/register.twig', [
+                'errors' => $errors,
+                'username' => $username,
+            ]);
+        }
+
         try {
             $this->authService->register($username, $password);
             $this->logger->info("User registered: {$username}");
         } catch (\Exception $e) {
-            $errorMessage = $e->getMessage() === 'Username already taken'
-                ? 'Username already taken'
-                : 'An error occurred during registration. Please try again.';
+            if ($e->getMessage() === 'Username already taken') {
+                $errors['username'] = 'Username already taken';
+            } else {
+                $errors['general'] = 'An error occurred during registration. Please try again.';
+            }
 
             return $this->render($response, 'auth/register.twig', [
-                'error' => $errorMessage,
+                'errors' => $errors,
                 'username' => $username,
             ]);
         }
