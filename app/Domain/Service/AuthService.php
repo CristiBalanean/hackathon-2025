@@ -51,8 +51,8 @@ class AuthService
             return false;
         }
 
-        session_start();
         $_SESSION['user_id'] = $user->id;
+        $_SESSION['username'] = $user->username;
 
         return true;
     }

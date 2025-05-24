@@ -63,6 +63,12 @@ class Kernel
             UserRepositoryInterface::class    => autowire(PdoUserRepository::class),
             ExpenseRepositoryInterface::class => autowire(PdoExpenseRepository::class),
         ]);
+
+        if(session_status() === PHP_SESSION_NONE)
+        {
+            session_start();
+        }
+
         $container = $builder->build();
 
         // Create an application instance and configure
@@ -76,9 +82,12 @@ class Kernel
 
         // Make current user ID globally available to twig templates
         // TODO: change the following line to set the user ID stored in the session, for when user is logged
-        $loggedInUserId = null;
+        $loggedInUserId = $_SESSION['user_id'] ?? null;
+        $loggedInUserName = $_SESSION['username'] ?? null;
+
         $twig = $container->get(Twig::class);
         $twig->getEnvironment()->addGlobal('currentUserId', $loggedInUserId);
+        $twig->getEnvironment()->addGlobal('currentUserName', $loggedInUserName);
 
         return $app;
     }
