@@ -62,6 +62,12 @@ class ExpenseService
         string $category,
     ): void {
         // TODO: implement this to update expense entity, perform validation, and persist
+        $expense->amountCents = (int)($amount * 100);
+        $expense->description = $description;
+        $expense->date = $date;
+        $expense->category = $category;
+
+        $this->expenses->save($expense);
     }
 
     public function importFromCsv(User $user, UploadedFileInterface $csvFile): int

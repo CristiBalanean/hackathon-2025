@@ -82,68 +82,31 @@ class ExpenseController extends BaseController
         // - rerender the "expenses.create" page with included errors in case of failure
         // - redirect to the "expenses.index" page in case of success
 
-        $data = (array)$request->getParsedBody();
-
-        $dateInput = trim($data['date'] ?? '');
-        $category = trim($data['category'] ?? '');
-        $amount = floatval($data['amount'] ?? 0);
-        $description = trim($data['description'] ?? '');
-
-        $errors = [];
-
-        try
-        {
-            $date = new \DateTimeImmutable($dateInput);
-            $today = new \DateTimeImmutable('today');
-            if($date > $today)
-            {
-                $errors['date'] = 'Date cannot be in the future';
-            }
-        }
-        catch (\Exception $e)
-        {
-            $errors['date'] = 'Invalid date.';
-        }
-
-        if ($amount <= 0)
-        {
-            $errors['amount'] = 'Amount must be greater than 0.';
-        }
-
-        if ($category === '')
-        {
-            $errors['category'] = 'Please select a category.';
-        }
-
-        if($description === '')
-        {
-            $errors['description'] = 'Description cannot be empty.';
-        }
-
         $userName = $_SESSION['username'] ?? null;
-        if(!$userName)
-        {
+        if (!$userName) {
             return $response->withStatus(401);
         }
+
         $user = $this->userRepository->findByUsername($userName);
+        $data = (array)$request->getParsedBody();
+        $validation = $this->validateExpenseForm($data);
 
-        if(!empty($errors))
-        {
+        if (!empty($validation['errors'])) {
             $categories = $this->expenseRepository->findDistinctCategories();
-
-            return $this->render($response, 'expenses/create,twig', [
-                'errors' => $errors,
+            return $this->render($response, 'expenses/create.twig', [
+                'errors' => $validation['errors'],
                 'categories' => $categories,
-                'formData' => [
-                    'date' => $dateInput,
-                    'category' => $category,
-                    'amount' => $amount,
-                    'description' => $description,
-                ],
+                'formData' => $validation['formData'],
             ]);
         }
 
-        $this->expenseService->create($user, $amount, $description, $date, $category);
+        $this->expenseService->create(
+            $user,
+            $validation['parsed']['amount'],
+            $validation['parsed']['description'],
+            $validation['parsed']['date'],
+            $validation['parsed']['category'],
+        );
 
         return $response->withHeader('Location', '/expenses')->withStatus(302);
     }
@@ -157,9 +120,28 @@ class ExpenseController extends BaseController
         // - load the expense to be edited by its ID (use route params to get it)
         // - check that the logged-in user is the owner of the edited expense, and fail with 403 if not
 
-        $expense = ['id' => 1];
+        $expenseId = (int) $routeParams['id'] ?? null;
 
-        return $this->render($response, 'expenses/edit.twig', ['expense' => $expense, 'categories' => []]);
+        $expense = $this->expenseRepository->find($expenseId);
+
+        if (!$expense) 
+        {
+            return $response->withStatus(404);
+        }
+
+        $loggedInUserId = $_SESSION['user_id'];
+
+        if ($expense->userId !== $loggedInUserId) 
+        {
+            return $response->withStatus(403);
+        }
+
+        $categories = $this->expenseRepository->findDistinctCategories();
+
+        return $this->render($response, 'expenses/edit.twig', [
+            'expense' => $expense, 
+            'categories' => $categories,
+        ]);
     }
 
     public function update(Request $request, Response $response, array $routeParams): Response
@@ -174,7 +156,46 @@ class ExpenseController extends BaseController
         // - rerender the "expenses.edit" page with included errors in case of failure
         // - redirect to the "expenses.index" page in case of success
 
-        return $response;
+        $expenseId = (int) $routeParams['id'];
+        $userName = $_SESSION['username'] ?? null;
+
+        if (!$userName) {
+            return $response->withStatus(401);
+        }
+
+        $user = $this->userRepository->findByUsername($userName);
+        $expense = $this->expenseRepository->find($expenseId);
+
+        if (!$expense) {
+            return $response->withStatus(404);
+        }
+
+        if ($expense->userId !== $user->id) {
+            return $response->withStatus(403);
+        }
+
+        $data = (array)$request->getParsedBody();
+        $validation = $this->validateExpenseForm($data);
+
+        if (!empty($validation['errors'])) {
+            $categories = $this->expenseRepository->findDistinctCategories();
+            return $this->render($response, 'expenses/edit.twig', [
+                'errors' => $validation['errors'],
+                'categories' => $categories,
+                'expense' => $expense,
+                'formData' => $validation['formData'],
+            ]);
+        }
+
+        $this->expenseService->update(
+            $expense,
+            $validation['parsed']['amount'],
+            $validation['parsed']['description'],
+            $validation['parsed']['date'],
+            $validation['parsed']['category'],
+        );
+
+        return $response->withHeader('Location', '/expenses')->withStatus(302);
     }
 
     public function destroy(Request $request, Response $response, array $routeParams): Response
@@ -210,5 +231,54 @@ class ExpenseController extends BaseController
         $this->expenseRepository->delete($expenseId);
 
         return $response->withHeader('Location', '/expenses')->withStatus(302);
+    }
+
+    private function validateExpenseForm(array $data): array
+    {
+        $errors = [];
+
+        $dateInput = trim($data['date'] ?? '');
+        $category = trim($data['category'] ?? '');
+        $amount = floatval($data['amount'] ?? 0);
+        $description = trim($data['description'] ?? '');
+
+        try {
+            $date = new \DateTimeImmutable($dateInput);
+            $today = new \DateTimeImmutable('today');
+            if ($date > $today) {
+                $errors['date'] = 'Date cannot be in the future';
+            }
+        } catch (\Exception $e) {
+            $errors['date'] = 'Invalid date.';
+            $date = null;
+        }
+
+        if ($amount <= 0) {
+            $errors['amount'] = 'Amount must be greater than 0.';
+        }
+
+        if ($category === '') {
+            $errors['category'] = 'Please select a category.';
+        }
+
+        if ($description === '') {
+            $errors['description'] = 'Description cannot be empty.';
+        }
+
+        return [
+            'errors' => $errors,
+            'formData' => [
+                'dateInput' => $dateInput,
+                'category' => $category,
+                'amount' => $amount,
+                'description' => $description,
+            ],
+            'parsed' => [
+                'date' => $date ?? null,
+                'category' => $category,
+                'amount' => $amount,
+                'description' => $description,
+            ],
+        ];
     }
 }

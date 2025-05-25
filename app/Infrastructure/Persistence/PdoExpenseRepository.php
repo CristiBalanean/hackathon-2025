@@ -41,16 +41,30 @@ class PdoExpenseRepository implements ExpenseRepositoryInterface
         {
             $sql = 'INSERT INTO expenses (user_id, date, category, amount_cents, description)
                     VALUES (:user_id, :date, :category, :amount_cents, :description)';
-            $stmt = $this->pdo->prepare($sql);
-
-            $stmt->execute([
-                'user_id' => $expense->userId,
-                'date' => $expense->date->format('Y-m-d H:i:s'),
-                'category' => $expense->category,
-                'amount_cents' => $expense->amountCents,
-                'description' => $expense->description,
-            ]);
         }
+        else
+        {
+            $sql = 'UPDATE expenses
+                    SET date = :date, category = :category, amount_cents = :amount_cents, description = :description
+                    WHERE id = :id AND user_id = :user_id';
+        }
+
+        $stmt = $this->pdo->prepare($sql);
+
+        $params =[
+            'user_id' => $expense->userId,
+            'date' => $expense->date->format('Y-m-d H:i:s'),
+            'category' => $expense->category,
+            'amount_cents' => $expense->amountCents,
+            'description' => $expense->description,
+        ];
+
+        if($expense->id !== null)
+        {
+            $params['id'] = $expense->id;
+        }
+
+        $stmt->execute($params);
     }
 
     public function delete(int $id): void
