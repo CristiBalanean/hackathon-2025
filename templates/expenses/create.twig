@@ -5,49 +5,49 @@
     <section class="mb-8">
         <form action="/expenses" method="POST" class="max-w-sm mx-auto">
             <div class="mb-4">
-                <label for="date" class="block text-gray-300 font-bold mb-1">Date:</label>
-                <input type="date" id="date" name="date" required
-                       value="{{ formData.dateInput ?? '' }}"
-                       class="w-full shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">
-                <p class="h-5 text-red-500 text-sm mt-1">
-                    {{ errors.date ?? '' }}
-                </p>
+                <div class="flex items-center">
+                    <label for="date" class="w-24 text-gray-300 font-bold">Date:</label>
+                    <input type="date" id="date" name="date" required
+                        value="{{ formData.dateInput ?? '' }}"
+                        class="flex-1 shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <p class="h-5 text-red-500 text-sm mt-1 ml-24">{{ errors.date ?? '' }}</p>
             </div>
 
             <div class="mb-4">
-                <label for="category" class="block text-gray-300 font-bold mb-1">Category:</label>
-                <select id="category" name="category" required
-                        class="w-full shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="">Select a category</option>
-                    {% for category in categories %}
-                        <option value="{{ category }}"
-                            {% if formData.category is defined and formData.category == category %}selected{% endif %}>
-                            {{ category|capitalize }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <p class="h-5 text-red-500 text-sm mt-1">
-                    {{ errors.category ?? '' }}
-                </p>
+                <div class="flex items-center">
+                    <label for="category" class="w-24 text-gray-300 font-bold">Category:</label>
+                    <select id="category" name="category" required
+                            class="flex-1 shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">
+                        <option value="">Select a category</option>
+                        {% for category in categories %}
+                            <option value="{{ category }}"
+                                {% if formData.category is defined and formData.category == category %}selected{% endif %}>
+                                {{ category|capitalize }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <p class="h-5 text-red-500 text-sm mt-1 ml-24">{{ errors.category ?? '' }}</p>
             </div>
 
             <div class="mb-4">
-                <label for="amount" class="block text-gray-300 font-bold mb-1">Amount:</label>
-                <input type="number" id="amount" name="amount" step="0.01" required
-                       value="{{ formData.amount ?? '' }}"
-                       class="w-full shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">
-                <p class="h-5 text-red-500 text-sm mt-1">
-                    {{ errors.amount ?? '' }}
-                </p>
+                <div class="flex items-center">
+                    <label for="amount" class="w-24 text-gray-300 font-bold">Amount:</label>
+                    <input type="number" id="amount" name="amount" step="0.01" required
+                        value="{{ formData.amount ?? '' }}"
+                        class="flex-1 shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">
+                </div>
+                <p class="h-5 text-red-500 text-sm mt-1 ml-24">{{ errors.amount ?? '' }}</p>
             </div>
 
             <div class="mb-6">
-                <label for="description" class="block text-gray-300 font-bold mb-1">Description:</label>
-                <textarea id="description" name="description" rows="2"
-                          class="w-full shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">{{ formData.description ?? '' }}</textarea>
-                <p class="h-5 text-red-500 text-sm mt-1">
-                    {{ errors.description ?? '' }}
-                </p>
+                <div class="flex items-start">
+                    <label for="description" class="w-24 text-gray-300 font-bold mt-2">Description:</label>
+                    <textarea id="description" name="description" rows="2"
+                            class="flex-1 shadow appearance-none border rounded py-2 px-3 bg-gray-700 text-gray-100 leading-tight focus:outline-none focus:shadow-outline">{{ formData.description ?? '' }}</textarea>
+                </div>
+                <p class="h-5 text-red-500 text-sm mt-1 ml-24">{{ errors.description ?? '' }}</p>
             </div>
 
             <div class="flex justify-end">
