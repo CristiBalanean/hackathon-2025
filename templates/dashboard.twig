@@ -24,11 +24,12 @@
         <h2 class="text-xl font-bold mb-4">Monthly Expenses Summary</h2>
         <form action="" method="get" class="mb-4 flex gap-4 items-center">
             {# TODO: remove mock data below, pass actual years having expenses from the controller #}
-            <select name="year" class="...">
-            {% for y in yearsWithExpenses %}
-                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
-            {% endfor %}
-        </select>
+            <select name="year" class="bg-gray-700 text-gray-100 rounded px-3 py-2">
+                {% for y in yearsWithExpenses %}
+                    <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+            </select>
+
 
             {# TODO: add the "selected" attribute to the current displayed month #}
             <select name="month" class="bg-gray-700 text-gray-100 rounded px-3 py-2">

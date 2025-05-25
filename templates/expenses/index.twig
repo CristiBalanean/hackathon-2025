@@ -89,7 +89,7 @@
                 <span></span>
             {% endif %}
 
-            {% if page * pageSize < total %}
+            {% if page * pageSize < totalCount %}
                 <a href="?page={{ page + 1 }}&year={{ year }}&month={{ month }}" class="text-blue-500 hover:text-blue-400">Next</a>
             {% else %}
                 <span></span>
