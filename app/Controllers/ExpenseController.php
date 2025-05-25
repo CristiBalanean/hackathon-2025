@@ -186,6 +186,29 @@ class ExpenseController extends BaseController
         // - call the repository method to delete the expense
         // - redirect to the "expenses.index" page
 
-        return $response;
+        $expenseId = (int) $routeParams['id'];
+        $userName = $_SESSION['username'] ?? null;
+
+        if(!$userName)
+        {
+            return $response->withStatus(401);
+        }
+
+        $user = $this->userRepository->findByUsername($userName);
+        $expense = $this->expenseRepository->find($expenseId);
+
+        if(!$expense)
+        {
+            return $response->withStatus(404);
+        }
+
+        if($expense->userId !== $user->id)
+        {
+            return $response->withStatus(403);
+        }
+
+        $this->expenseRepository->delete($expenseId);
+
+        return $response->withHeader('Location', '/expenses')->withStatus(302);
     }
 }
