@@ -309,6 +309,11 @@ class ExpenseController extends BaseController
 
         $count = $this->expenseService->importFromCsv($user, $uploadedFile);
 
+        $_SESSION['flash'] = [
+            'type' => 'success',
+            'message' => "Successfully imported {$count} expenses."
+        ];
+
         return $response->withHeader('Location', '/expenses')->withStatus(302);
     }
 }
