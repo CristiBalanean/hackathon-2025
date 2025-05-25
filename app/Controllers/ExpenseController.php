@@ -35,6 +35,8 @@ class ExpenseController extends BaseController
 
         // parse request parameters
         $userName = $_SESSION['username'] ?? null; // TODO: obtain logged-in user ID from session
+        $flash = $_SESSION['flash'] ?? null;
+        unset($_SESSION['flash']);
 
         $params = $request->getQueryParams();
         $year = isset($params['year']) ? (int)$params['year'] : (int)date('Y');
@@ -57,6 +59,7 @@ class ExpenseController extends BaseController
             'year' => $year,
             'month' => $month, 
             'yearsWithExpenses' => $yearWithExpenses,
+            'flash' => $flash,
         ]);
     }
 
@@ -229,6 +232,11 @@ class ExpenseController extends BaseController
         }
 
         $this->expenseRepository->delete($expenseId);
+
+        $_SESSION['flash'] = [
+            'type' => 'success',
+            'message' => 'Expense deleted successfully.',
+        ];
 
         return $response->withHeader('Location', '/expenses')->withStatus(302);
     }

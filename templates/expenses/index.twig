@@ -5,6 +5,12 @@
 {% block content %}
     <h1 class="text-2xl font-bold mb-4">Expenses</h1>
 
+    {% if flash %}
+        <div class="mb-4 px-4 py-2 rounded {{ flash.type == 'success' ? 'bg-green-600' : 'bg-red-600' }} text-white">
+            {{ flash.message }}
+        </div>
+    {% endif %}
+
     <a href="/expenses/create"
    class="inline-block mb-6 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
     Add Expense
