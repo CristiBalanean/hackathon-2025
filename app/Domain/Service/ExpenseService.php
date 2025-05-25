@@ -75,6 +75,82 @@ class ExpenseService
         // TODO: process rows in file stream, create and persist entities
         // TODO: for extra points wrap the whole import in a transaction and rollback only in case writing to DB fails
 
-        return 0; // number of imported rows
+        $stream = $csvFile->getStream()->detach();
+        $importedCount = 0;
+        $logger = new \Monolog\Logger('csv_import');
+        $logPath = __DIR__ . '/../../../var/import.log';
+        $logger->pushHandler(new \Monolog\Handler\StreamHandler($logPath, \Monolog\Logger::INFO));
+
+        $validCategories = ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Health'];
+        $validCategories = array_map('strtolower', $validCategories);
+
+        $seen = [];
+
+        while (($line = fgets($stream)) !== false)
+        {
+            $parts = str_getcsv(trim($line));
+            if(count($parts) !== 4)
+            {
+                $logger->warning("Invalid row format: $line");
+                continue;
+            }
+
+            [$dateStr, $amountStr, $description, $categoryOriginal] = $parts;
+
+            $description = trim($description);
+            $categoryOriginal = trim($categoryOriginal);
+            $categoryLower = strtolower($categoryOriginal);
+
+            if ($description === '') 
+            {
+                $logger->warning("Empty description skipped: $line");
+                continue;
+            }
+
+            $key = md5($dateStr . $description . $amountStr . $categoryLower);
+
+            if(in_array($categoryLower, $validCategories, true) === false)
+            {
+                $logger->warning("Unknown category skipped: $line");
+                continue;
+            }
+
+            try
+            {
+                $date = new \DateTimeImmutable($dateStr);
+                $amount = (float)$amountStr;
+            }
+            catch (\Exception $e)
+            {
+                $logger->warning("Invalid data in row: $line");
+                continue;
+            }
+
+            if(isset($seen[$key]))
+            {
+                $logger->info("Duplicate row skipped: $line");
+                continue;
+            }
+
+            $seen[$key] = true;
+
+            $expense = new Expense(
+                null,
+                $user->id,
+                $date,
+                $categoryOriginal,
+                (int)($amount * 100),
+                $description
+            );
+
+            $this->expenses->save($expense);
+            $importedCount++;
+        }
+
+        fclose($stream);
+
+        $logger->info("CSV import finished for user {$user->username}. Imported $importedCount rows.");
+
+        return $importedCount; // number of imported rows
     }
 }

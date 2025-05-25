@@ -69,6 +69,10 @@ class ExpenseController extends BaseController
 
         $categories = $this->expenseRepository->findDistinctCategories();
 
+        if (empty($categories)) {
+            $categories = ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Health'];
+        }
+
         return $this->render($response, 'expenses/create.twig', ['categories' => $categories]);
     }
 
@@ -280,5 +284,27 @@ class ExpenseController extends BaseController
                 'description' => $description,
             ],
         ];
+    }
+
+    public function importCsv(Request $request, Response $response): Response
+    {
+            $userName = $_SESSION['username'] ?? null;
+
+        if (!$userName) {
+            return $response->withStatus(401);
+        }
+
+        $user = $this->userRepository->findByUsername($userName);
+
+        $uploadedFiles = $request->getUploadedFiles();
+        $uploadedFile = $uploadedFiles['csv'] ?? null;
+
+        if ($uploadedFile === null || $uploadedFile->getError() !== UPLOAD_ERR_OK) {
+            return $response->withStatus(400);
+        }
+
+        $count = $this->expenseService->importFromCsv($user, $uploadedFile);
+
+        return $response->withHeader('Location', '/expenses')->withStatus(302);
     }
 }
