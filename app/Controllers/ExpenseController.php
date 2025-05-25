@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Domain\Repository\ExpenseRepositoryInterface;
+use App\Domain\Repository\UserRepositoryInterface;
 use App\Domain\Service\ExpenseService;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -16,6 +18,8 @@ class ExpenseController extends BaseController
     public function __construct(
         Twig $view,
         private readonly ExpenseService $expenseService,
+        private readonly UserRepositoryInterface $userRepository,
+        private readonly ExpenseRepositoryInterface $expenseRepository,
     ) {
         parent::__construct($view);
     }
@@ -30,16 +34,29 @@ class ExpenseController extends BaseController
         // - use the expense service to fetch expenses for the current user
 
         // parse request parameters
-        $userId = 1; // TODO: obtain logged-in user ID from session
+        $userName = $_SESSION['username'] ?? null; // TODO: obtain logged-in user ID from session
+
+        $params = $request->getQueryParams();
+        $year = isset($params['year']) ? (int)$params['year'] : (int)date('Y');
+        $month = isset($params['month']) ? (int)$params['month'] : (int)date('m');
+
         $page = (int)($request->getQueryParams()['page'] ?? 1);
         $pageSize = (int)($request->getQueryParams()['pageSize'] ?? self::PAGE_SIZE);
 
-        $expenses = $this->expenseService->list($userId, $page, $pageSize);
+        $user = $this->userRepository->findByUsername($userName);
+
+        $result = $this->expenseService->list($user, $year, $month, $page, $pageSize);
+
+        $yearWithExpenses = $this->expenseRepository->findYearsWithExpenses($user->id);
 
         return $this->render($response, 'expenses/index.twig', [
-            'expenses' => $expenses,
+            'expenses' => $result['items'],
+            'totalCount' => $result['totalCount'],
             'page'     => $page,
             'pageSize' => $pageSize,
+            'year' => $year,
+            'month' => $month, 
+            'yearsWithExpenses' => $yearWithExpenses,
         ]);
     }
 
@@ -50,7 +67,9 @@ class ExpenseController extends BaseController
         // Hints:
         // - obtain the list of available categories from configuration and pass to the view
 
-        return $this->render($response, 'expenses/create.twig', ['categories' => []]);
+        $categories = $this->expenseRepository->findDistinctCategories();
+
+        return $this->render($response, 'expenses/create.twig', ['categories' => $categories]);
     }
 
     public function store(Request $request, Response $response): Response
@@ -63,7 +82,70 @@ class ExpenseController extends BaseController
         // - rerender the "expenses.create" page with included errors in case of failure
         // - redirect to the "expenses.index" page in case of success
 
-        return $response;
+        $data = (array)$request->getParsedBody();
+
+        $dateInput = trim($data['date'] ?? '');
+        $category = trim($data['category'] ?? '');
+        $amount = floatval($data['amount'] ?? 0);
+        $description = trim($data['description'] ?? '');
+
+        $errors = [];
+
+        try
+        {
+            $date = new \DateTimeImmutable($dateInput);
+            $today = new \DateTimeImmutable('today');
+            if($date > $today)
+            {
+                $errors['date'] = 'Date cannot be in the future';
+            }
+        }
+        catch (\Exception $e)
+        {
+            $errors['date'] = 'Invalid date.';
+        }
+
+        if ($amount <= 0)
+        {
+            $errors['amount'] = 'Amount must be greater than 0.';
+        }
+
+        if ($category === '')
+        {
+            $errors['category'] = 'Please select a category.';
+        }
+
+        if($description === '')
+        {
+            $errors['description'] = 'Description cannot be empty.';
+        }
+
+        $userName = $_SESSION['username'] ?? null;
+        if(!$userName)
+        {
+            return $response->withStatus(401);
+        }
+        $user = $this->userRepository->findByUsername($userName);
+
+        if(!empty($errors))
+        {
+            $categories = $this->expenseRepository->findDistinctCategories();
+
+            return $this->render($response, 'expenses/create,twig', [
+                'errors' => $errors,
+                'categories' => $categories,
+                'formData' => [
+                    'date' => $dateInput,
+                    'category' => $category,
+                    'amount' => $amount,
+                    'description' => $description,
+                ],
+            ]);
+        }
+
+        $this->expenseService->create($user, $amount, $description, $date, $category);
+
+        return $response->withHeader('Location', '/expenses')->withStatus(302);
     }
 
     public function edit(Request $request, Response $response, array $routeParams): Response
