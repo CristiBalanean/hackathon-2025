@@ -136,7 +136,7 @@ class ExpenseController extends BaseController
             return $response->withStatus(403);
         }
 
-        $categories = $this->expenseRepository->findDistinctCategories();
+        $categories = ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Health'];
 
         return $this->render($response, 'expenses/edit.twig', [
             'expense' => $expense, 
@@ -178,7 +178,7 @@ class ExpenseController extends BaseController
         $validation = $this->validateExpenseForm($data);
 
         if (!empty($validation['errors'])) {
-            $categories = $this->expenseRepository->findDistinctCategories();
+            $categories = ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Health'];
             return $this->render($response, 'expenses/edit.twig', [
                 'errors' => $validation['errors'],
                 'categories' => $categories,

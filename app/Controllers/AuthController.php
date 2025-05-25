@@ -33,6 +33,7 @@ class AuthController extends BaseController
         $data = (array)$request->getParsedBody();
         $username = $data['username'] ?? '';
         $password = $data['password'] ?? '';
+        $passwordConfirm = $data['confirm_password'] ?? '';
 
         // Validate inputs first (add your length and pattern checks here)
         $errors = [];
@@ -42,6 +43,10 @@ class AuthController extends BaseController
         }
         if (strlen($password) < 8 || !preg_match('/\d/', $password)) {
             $errors['password'] = 'Password must be at least 8 characters and contain at least 1 number';
+        }
+        if ($password !== $passwordConfirm) 
+        {
+            $errors['confirm_password'] = 'Passwords do not match';
         }
 
         if (!empty($errors)) {
