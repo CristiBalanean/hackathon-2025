@@ -67,11 +67,7 @@ class ExpenseController extends BaseController
         // Hints:
         // - obtain the list of available categories from configuration and pass to the view
 
-        $categories = $this->expenseRepository->findDistinctCategories();
-
-        if (empty($categories)) {
-            $categories = ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Health'];
-        }
+        $categories = ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Health'];
 
         return $this->render($response, 'expenses/create.twig', ['categories' => $categories]);
     }
@@ -96,7 +92,7 @@ class ExpenseController extends BaseController
         $validation = $this->validateExpenseForm($data);
 
         if (!empty($validation['errors'])) {
-            $categories = $this->expenseRepository->findDistinctCategories();
+            $categories = ['Groceries', 'Transport', 'Entertainment', 'Utilities', 'Health'];
             return $this->render($response, 'expenses/create.twig', [
                 'errors' => $validation['errors'],
                 'categories' => $categories,
