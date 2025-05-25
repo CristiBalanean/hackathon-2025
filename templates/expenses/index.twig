@@ -87,20 +87,35 @@
         </table>
 
         {# Pagination summary and controls #}
-        <div class="mt-4 flex justify-center text-sm text-gray-400">{{ totalCount }} item(s)</div>
-        <div class="mt-2 flex justify-between">
-            {% if page > 1 %}
-                <a href="?page={{ page - 1 }}&year={{ year }}&month={{ month }}" class="text-blue-500 hover:text-blue-400">Previous</a>
-            {% else %}
-                <span></span>
-            {% endif %}
+        {% if totalCount > pageSize %}
+            {% set totalPages = (totalCount / pageSize) | round(0, 'ceil') %}
+            <div class="mt-2 flex justify-center gap-2 text-sm">
 
-            {% if page * pageSize < totalCount %}
-                <a href="?page={{ page + 1 }}&year={{ year }}&month={{ month }}" class="text-blue-500 hover:text-blue-400">Next</a>
-            {% else %}
-                <span></span>
-            {% endif %}
-        </div>
+                {# Previous #}
+                {% if page > 1 %}
+                    <a href="?page={{ page - 1 }}&year={{ year }}&month={{ month }}" class="text-blue-600 hover:underline">Previous</a>
+                {% else %}
+                    <span class="text-gray-400">Previous</span>
+                {% endif %}
+
+                {# Page numbers #}
+                {% for i in 1..totalPages %}
+                    {% if i == page %}
+                        <span class="font-semibold text-blue-600">{{ i }}</span>
+                    {% else %}
+                        <a href="?page={{ i }}&year={{ year }}&month={{ month }}" class="hover:underline">{{ i }}</a>
+                    {% endif %}
+                {% endfor %}
+
+                {# Next #}
+                {% if page < totalPages %}
+                    <a href="?page={{ page + 1 }}&year={{ year }}&month={{ month }}" class="text-blue-600 hover:underline">Next</a>
+                {% else %}
+                    <span class="text-gray-400">Next</span>
+                {% endif %}
+        {% else %}
+            <div class="mt-4 flex justify-center text-sm text-gray-400">{{ totalCount }} item(s)</div>
+        {% endif %}
     </section>
 
     <section class="mb-8">
