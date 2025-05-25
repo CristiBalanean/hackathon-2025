@@ -47,7 +47,7 @@ class ExpenseController extends BaseController
 
         $result = $this->expenseService->list($user, $year, $month, $page, $pageSize);
 
-        $yearWithExpenses = $this->expenseRepository->findYearsWithExpenses($user->id);
+        $yearWithExpenses = $this->expenseRepository->listExpenditureYears($user);
 
         return $this->render($response, 'expenses/index.twig', [
             'expenses' => $result['items'],

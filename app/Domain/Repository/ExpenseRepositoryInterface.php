@@ -31,6 +31,4 @@ interface ExpenseRepositoryInterface
     public function sumAmounts(array $criteria): float;
 
     public function findDistinctCategories(): array;
-
-    public function findYearsWithExpenses(int $userId) : array;
 }
